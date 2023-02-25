@@ -3,8 +3,7 @@ import typing
 from hashlib import sha256
 from typing import Optional
 
-from sqlalchemy import select, insert
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select
 
 from app.admin.models import AdminModel
 from app.base.base_accessor import BaseAccessor
@@ -18,9 +17,9 @@ class AdminAccessor(BaseAccessor):
         query = select(AdminModel).where(AdminModel.email == email)
         async with self.app.database.session() as session:
             answer = await session.execute(query)
-            res = answer.first()
-            if res:
-                return res[0]
+            result = answer.first()
+            if result:
+                return result[0]
             return None
 
     async def create_admin(self, email: str, password: str) -> AdminModel:
