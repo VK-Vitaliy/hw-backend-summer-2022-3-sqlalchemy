@@ -51,7 +51,7 @@ class AnswerModel(db):
     __tablename__ = "answers"
     id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False)
-    score = Column(Integer, nullable=False)
+    is_correct: bool = Column(Boolean, nullable=False)
     question_id = Column(Integer, ForeignKey('questions.id', ondelete='CASCADE'), nullable=False)
     __table_args__ = {'extend_existing': True}
 
