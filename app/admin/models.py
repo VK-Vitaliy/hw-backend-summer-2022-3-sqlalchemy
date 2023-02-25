@@ -37,7 +37,7 @@ class Admin:
 
 class AdminModel(db):
     __tablename__ = "admins"
-    id = Column(Integer, primary_key = True)
+    id = Column(Integer, primary_key=True)
     email = Column(String, nullable=False)
     password = Column(String, nullable=False)
     __table_args__ = {'extend_existing': True}
