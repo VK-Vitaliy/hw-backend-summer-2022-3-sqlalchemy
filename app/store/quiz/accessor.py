@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from sqlalchemy import select
 
 from app.base.base_accessor import BaseAccessor
@@ -18,7 +20,6 @@ class QuizAccessor(BaseAccessor):
                 await session.commit()
         return theme
 
-
     async def get_theme_by_title(self, title: str) -> Theme | None:
         query = select(ThemeModel).where(ThemeModel.title == title)
         async with self.app.database.session() as session:
@@ -29,10 +30,23 @@ class QuizAccessor(BaseAccessor):
             return None
 
     async def get_theme_by_id(self, id_: int) -> Theme | None:
-        raise NotImplemented
+        query = select(ThemeModel).where(ThemeModel.id == id_)
+        async with self.app.database.session() as session:
+            answer = await session.execute(query)
+            result = answer.first()
+            if result:
+                return result[0]
+            return None
 
     async def list_themes(self) -> list[Theme]:
-        raise NotImplemented
+        list_themes = []
+        query = select(ThemeModel)
+        async with self.app.database.session() as session:
+            answer = await session.execute(query)
+            results = answer.scalars().all()
+            for res in results:
+                list_themes.append(Theme(id=res.id, title=res.title))
+        return list_themes
 
     async def create_answers(
             self, question_id: int, answers: list[Answer]
