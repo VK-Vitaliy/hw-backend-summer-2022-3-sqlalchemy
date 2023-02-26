@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from typing import Optional
+
 from app.store.database.sqlalchemy_base import db
 
 from sqlalchemy import (
@@ -22,7 +24,7 @@ from sqlalchemy.orm import relationship
 
 @dataclass
 class Theme:
-    id: int | None
+    id: Optional[int]
     title: str
 
 
