@@ -55,13 +55,11 @@ class QuizAccessor(BaseAccessor):
 
     async def create_question(self, title: str, theme_id: int, answers: list[Answer]) -> Question:
         question = QuestionModel(title=title, theme_id=theme_id)
-        existed_question = await self.get_question_by_title(title)
-        if not existed_question:
-            async with self.app.database.session() as session:
-                session.add(question)
-                await session.commit()
+        async with self.app.database.session() as session:
+            session.add(question)
+            await session.commit()
         current_question = await self.get_question_by_title(title=title)
-        await self.create_answers(answers=answers, question_id=current_question.id)
+        await self.create_answers(question_id=current_question.id, answers=answers)
         return Question(id=question.id, title=question.title, theme_id=question.theme_id, answers=answers)
 
     async def get_question_by_title(self, title: str) -> Question | None:
