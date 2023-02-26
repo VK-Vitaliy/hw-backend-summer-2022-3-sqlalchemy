@@ -64,8 +64,7 @@ class QuizAccessor(BaseAccessor):
 
     async def get_question_by_title(self, title: str) -> Question | None:
         query_question_models = select(QuestionModel).where(QuestionModel.title == title)
-        query_answer_models = select(AnswerModel).where(
-            AnswerModel.question_id == (select(QuestionModel.id).where(QuestionModel.title == title)))
+        query_answer_models = select(AnswerModel)
         async with self.app.database.session() as session:
             question_models = await session.execute(query_question_models)
             question_models_results = question_models.first()
