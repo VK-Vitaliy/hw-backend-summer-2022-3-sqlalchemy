@@ -20,18 +20,18 @@ class QuizAccessor(BaseAccessor):
         query = select(ThemeModel).where(ThemeModel.title == title)
         async with self.app.database.session() as session:
             answer = await session.execute(query)
-            result = answer.first()[0]
+            result = answer.first()
             if result:
-                return Theme(id=result.id, title=result.title)
+                return Theme(id=result[0].id, title=result[0].title)
             return None
 
     async def get_theme_by_id(self, id_: int) -> Theme | None:
         query = select(ThemeModel).where(ThemeModel.id == id_)
         async with self.app.database.session() as session:
             answer = await session.execute(query)
-            result = answer.first()[0]
+            result = answer.first()
             if result:
-                return Theme(id=result.id, title=result.title)
+                return Theme(id=result[0].id, title=result[0].title)
             return None
 
     async def list_themes(self) -> list[Theme]:
@@ -45,7 +45,13 @@ class QuizAccessor(BaseAccessor):
         return list_themes
 
     async def create_answers(self, question_id: int, answers: list[Answer]) -> list[Answer]:
-        raise NotImplemented
+        async with self.app.database.session() as session:
+            for answer in answers:
+                session.add(AnswerModel(title=answer.title,
+                                        is_correct=answer.is_correct,
+                                        question_id=question_id))
+            await session.commit()
+        return answers
 
     async def create_question(self, title: str, theme_id: int, answers: list[Answer]) -> Question:
         question = QuestionModel(title=title, theme_id=theme_id)
@@ -54,8 +60,9 @@ class QuizAccessor(BaseAccessor):
             async with self.app.database.session() as session:
                 session.add(question)
                 await session.commit()
-        await self.create_answers(answers=answers, question_id=question.id)
-        return question
+        current_question = await self.get_question_by_title(title=title)
+        await self.create_answers(answers=answers, question_id=current_question.id)
+        return Question(id=question.id, title=question.title, theme_id=question.theme_id, answers=answers)
 
     async def get_question_by_title(self, title: str) -> Question | None:
         query_question_models = select(QuestionModel).where(QuestionModel.title == title)
@@ -63,13 +70,13 @@ class QuizAccessor(BaseAccessor):
             AnswerModel.question_id == (select(QuestionModel.id).where(QuestionModel.title == title)))
         async with self.app.database.session() as session:
             question_models = await session.execute(query_question_models)
-            question_models_results = question_models.first()[0]
+            question_models_results = question_models.first()
             if question_models_results:
                 answer_models = await session.execute(query_answer_models)
                 answer_models_results = answer_models.scalars().all()
-                question = Question(id=question_models_results.id,
-                                    theme_id=question_models_results.theme_id,
-                                    title=question_models_results.title,
+                question = Question(id=question_models_results[0].id,
+                                    theme_id=question_models_results[0].theme_id,
+                                    title=question_models_results[0].title,
                                     answers=[Answer(title=ans.title, is_correct=ans.is_correct)
                                              for ans in answer_models_results])
                 return question
@@ -84,6 +91,7 @@ class QuizAccessor(BaseAccessor):
 
             question_models = await session.execute(query_question_models)
             question_models_results = question_models.scalars().all()
+
             answer_models = await session.execute(query_answer_models)
             answer_models_results = answer_models.scalars().all()
 
@@ -95,5 +103,4 @@ class QuizAccessor(BaseAccessor):
                         theme_id=res.theme_id,
                         answers=[Answer(title=ans.title, is_correct=ans.is_correct)
                                  for ans in answer_models_results if ans.question_id == res.id]))
-        if theme_id is None:
             return list_questions
