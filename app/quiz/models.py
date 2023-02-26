@@ -30,7 +30,7 @@ class Theme:
 
 @dataclass
 class Question:
-    id: int | None
+    id: Optional[int]
     title: str
     theme_id: int
     answers: list["Answer"]
