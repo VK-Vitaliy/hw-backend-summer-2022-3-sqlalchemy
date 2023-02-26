@@ -58,23 +58,21 @@ class QuizAccessor(BaseAccessor):
         return question
 
     async def get_question_by_title(self, title: str) -> Question | None:
-        query = select(QuestionModel).where(QuestionModel.title == title)
+        query_question_models = select(QuestionModel).where(QuestionModel.title == title)
+        query_answer_models = select(AnswerModel).where(
+            AnswerModel.question_id == (select(QuestionModel.id).where(QuestionModel.title == title)))
         async with self.app.database.session() as session:
-            answer = await session.execute(query)
-            result = answer.first()[0]
-            if result:
-                return Question(
-                    id=result.id,
-                    title=title,
-                    theme_id=result.theme_id,
-                    answers=[
-                        Answer(
-                            title=a.title,
-                            is_correct=a.is_correct,
-                        )
-                        for a in result.answers
-                    ],
-                )
+            question_models = await session.execute(query_question_models)
+            question_models_results = question_models.first()[0]
+            if question_models_results:
+                answer_models = await session.execute(query_answer_models)
+                answer_models_results = answer_models.scalars().all()
+                question = Question(id=question_models_results.id,
+                                    theme_id=question_models_results.theme_id,
+                                    title=question_models_results.title,
+                                    answers=[Answer(title=ans.title, is_correct=ans.is_correct)
+                                             for ans in answer_models_results])
+                return question
             return None
 
     async def list_questions(self, theme_id: int | None = None) -> list[Question]:
